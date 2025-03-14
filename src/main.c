@@ -7,10 +7,13 @@
 #define SECOND_SCREEN_THIRD (char *)0x428
 #define LAST_SCREEN_THIRD (char *)0x450
 #define SCREEN_ROW_OFFSET 0x80
+#define LEFT_PAD 8
+#define TOP_PAD 1
+#define MATRIX_SIZE 21
+#define MATRIX_MEM_SIZE 441 // 21 * 21
 
 extern uint8_t rom[];
-extern size_t matrix_width;
-extern size_t matrix_height;
+extern size_t matrix_count;
 
 void clear_text_screen() {
   char *one = (char *)0x400;
@@ -32,24 +35,43 @@ void clear_text_screen() {
   memset(eight, 0x20, 120);
 }
 
-int main(void) {
+void render_qr(uint8_t *qr) {
   int i;
+  int row;
   char *row_pointer;
 
   clear_text_screen();
   row_pointer = (char *)FIRST_SCREEN_THIRD;
-  for (i = 0; i < matrix_height; i++) {
-    if (i < 8) {
+  for (i = 0; i < MATRIX_SIZE; i++) {
+    row = i + TOP_PAD;
+    if (row < 8) {
       row_pointer = FIRST_SCREEN_THIRD;
-    } else if (i < 16) {
+    } else if (row < 16) {
       row_pointer = SECOND_SCREEN_THIRD;
     } else {
       row_pointer = LAST_SCREEN_THIRD;
     }
-    memcpy(row_pointer + (i % 8) * SCREEN_ROW_OFFSET, &rom[i * matrix_width],
-           matrix_width);
+    memcpy(row_pointer + (row % 8) * SCREEN_ROW_OFFSET + LEFT_PAD, &qr[i * 21],
+           21);
   }
-  while (true)
-    ;
+}
+
+void apple_sleep(uint8_t interval){
+  volatile uint16_t i;
+  for (; interval > 0; interval--) {
+      for (i = 0; i < 30000; i++) {
+          // Empty loop for delay
+      }
+  }
+}
+
+int main(void) {
+  int i = 0;
+  while (true) {
+    render_qr(&rom[i * MATRIX_MEM_SIZE]);
+    apple_sleep(5);
+    i += 1;
+    i %= matrix_count;
+  }
   return 0;
 }

@@ -2,9 +2,11 @@
 
 ## TLDR
 
-Turn a QR code into a binary matrix and save it to `src/matrix.txt`
+Turn QR code(s) into a binary matrix(es) and save to `src/matrix.txt`
 
-* (must be a 21 x 21 matrix. no margins!!! dimensions are very important)
+* matrices must be a 21 x 21 matrix.
+* no margins!!! dimensions are very important
+* new line between matrices
 
 ```
 make install

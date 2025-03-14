@@ -2,32 +2,36 @@
 
 # frozen_string_literal: true
 
-require 'pry-nav'
-
 wd = File.expand_path('..', File.dirname(__FILE__))
-matrix = File.readlines("#{wd}/src/matrix.txt", chomp: true).map do |line|
-  line.split('')
+
+matrices = File.read("#{wd}/src/matrix.txt").split(/\n{2,}/).map do |matrix_input|
+  matrix_input.split("\n").map do |line|
+    line.split('').map do |char|
+      # all white space is 0x20, empty is 0xA0
+      char == '1' ? '0xA0' : '0x20'
+    end
+  end
 end
 
-# filled in space is 0x20, empty is 0xA0
+invalid = matrices.any? do |matrix|
+  matrix.length != 21 || matrix.any? { |row| row.length != 21 }
+end
 
-LEFT_PAD = 8
-TOP_PAD = 1
+data = matrices.map do |matrix|
+  matrix.join(', ')
+end.join(', ')
 
-hex_chars = [['0x20'] * (matrix.first.length + LEFT_PAD)] * TOP_PAD + matrix.map do |row|
-  ['0x20'] * LEFT_PAD + row.map { _1 == '1' ? '0xA0' : '0x20' }
-end.flatten
+raise StandardError, 'Found matrix with invalid dimensions (  •̀⤙•́  )' if invalid
 
 content = <<~CONTENT
   #include <stdint.h>
   #include <stddef.h>
 
-  uint8_t rom[] = {
-    #{hex_chars.join(', ')}
+  uint8_t rom[#{matrices.length * matrices.first.length**2}] = {
+    #{data}
   };
 
-  size_t matrix_width = #{matrix.length + LEFT_PAD};
-  size_t matrix_height = #{matrix.length + TOP_PAD};
+  size_t matrix_count = #{matrices.length};
 CONTENT
 
 File.open("#{wd}/src/qr_rom.c", 'w+') do |f|
